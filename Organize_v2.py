@@ -2,9 +2,8 @@ import os
 import json
 import shutil
 
-# sabin 
 # Flags
-DEBUG = True
+DEBUG = False
 CREATELINKS = True
 
 # List of possible tags
@@ -27,41 +26,47 @@ for civitai_info_file in civitai_info_files:
         print(f"Opened file {civitai_info_file}")
 
     # Extract the value of model type
-    model_type = data['model']['type']
+    model_type = data.get('model', {}).get('type')
     if DEBUG:
         print(f"Extracted value of model type: {model_type}")
 
     # Extract the value of baseModel
-    base_model = data['baseModel']
+    base_model = data.get('baseModel')
     if DEBUG:
         print(f"Extracted value of baseModel: {base_model}")
 
     # Extract the first matching tag from the list of model tags
-    model_tags = data['model']['tags']
+    model_tags = data.get('model', {}).get('tags', [])
     tag = next((tag for tag in model_tags if tag in tags_list), None)
     if DEBUG:
         print(f"Extracted value of tag: {tag}")
 
     # If CREATELINKS flag is enabled, extract the value of modelId and create a prefix.url file.
     if CREATELINKS:
-        model_id = data['modelId']
+        model_id = data.get('modelId')
         if DEBUG:
             print(f"Extracted value of modelId: {model_id}")
-        with open(f"{prefix}.url", 'w') as f:
-            f.write(f"[InternetShortcut]\nURL=https://civitai.com/models/{model_id}")
-        if DEBUG:
-            print(f"Created file {prefix}.url")
+        if model_id is not None:
+            with open(f"{prefix}.url", 'w') as f:
+                f.write(f"[InternetShortcut]\nURL=https://civitai.com/models/{model_id}")
+            if DEBUG:
+                print(f"Created file {prefix}.url")
 
     # Create a folder with the name type\baseModel\tag, if it doesn't exist already
-    folder_path = os.path.join(model_type, base_model, tag)
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-        if DEBUG:
-            print(f"Created folder {folder_path}")
-
-    # Move all prefix.* files to the created folder
-    for file in os.listdir():
-        if file.startswith(prefix):
-            shutil.move(file, os.path.join(folder_path, file))
+    if model_type and base_model and tag:
+        folder_path = os.path.join(model_type, base_model, tag)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
             if DEBUG:
-                print(f"Moved file {file} to folder {folder_path}")
+                print(f"Created folder {folder_path}")
+
+        # Move all prefix.* files to the created folder
+        for file in os.listdir():
+            if file.startswith(prefix):
+                shutil.move(file, os.path.join(folder_path, file))
+                if DEBUG:
+                    print(f"Moved file {file} to folder {folder_path}")
+    else:
+        folder_path = None
+        if DEBUG:
+            print("Could not create folder path, skipping file")
