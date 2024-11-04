@@ -3,7 +3,7 @@ import json
 import shutil
 
 # Flags
-DEBUG = True
+DEBUG = False
 CREATELINKS = True
 
 # List of possible tags
